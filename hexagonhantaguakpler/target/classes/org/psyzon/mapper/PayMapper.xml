@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<configuration>
+
+<mapper namespace="org.zerock.mapper.PayrollMapper">
+
+<resultMap id="payrollResultMap" type="org.psyzon.domain.PayrollVO">
+<id  property="payNo" column="payroll_no"/>
+<result property="payDay"	column="payroll_date"/>
+<result property="payOrder"	column="payroll_order"/>
+<result property="basePay" column="base_salary"/>
+<result property="mealPay" column="meal_allowance"/>
+<result property="childPay" column="child_allowance"/>
+<result property="jobPay" column="job_allowance"/>
+<result property="carPay" column="car_care_allowance"/>
+<result property="tenurePay" column="tenure_allowance"/>
+<result property="dutyPay" column="duty_allowance"/>
+<result property="bonusPay" column="bonus_allowance"/>
+<result property="holidayPay" column="holiday_allowance"/>
+</resultMap>
+
+<resultMap id="paySearchResultMap" type="org.psyzon.domain.PaySearchVO">
+<result property="payDay"	column="payroll_date"/>
+<result property="payOrder"	column="payroll_order"/>
+</resultMap>
+
+<resultMap id="deductionResultMap" type="org.psyzon.domain.DeductionVO">
+<id property="payNo" column="payroll_no"/>
+<result property="nationalPension" column="national_pension"/>
+<result property="healthInsurance" column="health_insurance"/>
+<result property="longInsurance" column="long_term_care_insurance"/>
+<result property="empInsurance" column="employment_insurance"/>
+<result property="incomeTax" column="income_tax"/>
+<result property="residentTax" column="resident_tax"/>
+<result property="etcDeduction" column="etc_deduction"/>
+</resultMap>
+
+
+<select id= "selectPayByDateOrder"  parameterType="org.psyzon.domain.PaySearchVO" resultType="org.psyzon.domain.PayrollVO" resultMap="paysearchMap">
+
+<![CDATA[
+SELECT 
+    PAYROLL_NO, PAYROLL_DATE, PAYROLL_ORDER, BASE_SALARY, MEAL_ALLOWANCE, 
+    CHILD_ALLOWANCE, JOB_ALLOWANCE, CAR_CARE_ALLOWANCE, TENURE_ALLOWANCE, 
+    DUTY_ALLOWANCE, BONUS_ALLOWANCE, HOLIDAY_ALLOWANCE
+FROM PAYROLL
+WHERE (M_NUMBER = #{m_number} OR #{m_number} = 'ALL')
+    AND PAYROLL_DATE >= TO_DATE(#{pay_day}, 'yyyy-MM')
+	AND PAYROLL_DATE < ADD_MONTHS(TO_DATE(#{pay_day}, 'yyyy-MM'), 1)
+    AND PAYROLL_ORDER = #{pay_order}
+]]>
+
+</select>
+
+<select id="selectDeduction"  resultType="org.psyzon.domain.DeductionVO" resultMap="deductionResultMap">
+
+SELECT
+	NATIONAL_PENSION, HEALTH_INSURANCE,
+	LONG_TERM_CARE_INSURANCE, EMPLOYMENT_INSURANCE,
+	INCOME_TAX, RESIDENT_TAX, ETC_DEDUCTION
+FROM DEDUCTION
+WHERE PAYROLL_NO = #{payNo}
+
+</select>
+
+<select id="NewMemForPay" resultType = "org.psyzon.domain.NewMemForPayVO">
+
+SELECT M_TYPE, M_NUMBER, M_NAME, M_CLASS, M_POSITION, M_CONDITION
+FROM MEMBER_LIST
+WHERE (M_CLASS = #{m_class} OR #{m_class} = 'ALL')
+	AND (M_CONDITION = #{m_condition} OR #{m_condition} = 'ALL');
+<!-- 검색조건이 문자열 'ALL'로 입력되었을 경우, 해당 조건은 항상 '참'으로 간주되어 모든 속성을 대상으로 한다. -->
+
+</select>
+
+<select id="AddListForPay" resultType="org.psyzon.domain.AddListForPayVO">
+
+SELECT M_NUMBER, M_TYPE, M_NAME, M_CLASS
+FROM MEMBER_LIST
+WHERE M_NUMBER = #{m_number}
+
+</select>
+
+<insert id="insertPay" parameterType="org.psyzon.domain.PayrollVO">
+<!-- 동일 트랜잭션 상에서, 자동증가한 시퀀스 값을 얻어 필드에 저장하여 공제항목 insert에 사용하기 위함 -->
+<selectKey keyProperty="payNo" order="BEFORE" resultType="int">
+select payroll_seq.nextval from dual
+</selectKey>
+
+INSERT INTO PAYROLL (
+	M_NUMBER, PAYROLL_DATE, PAYROLL_ORDER,
+	BASE_SALARY, MEAL_ALLOWANCE, CHILD_ALLOWANCE,
+	JOB_ALLOWANCE, CAR_CARE_ALLOWANCE,
+	TENURE_ALLOWANCE, DUTY_ALLOWANCE,
+	BONUS__ALLOWANCE, HOLIDAY_ALLOWANCE)
+VALUES (
+	#{m_number}, #{payDay}, #{payOrder},
+	#{basePay}, #{mealPay}, #{childPay}, #{jobPay},
+	#{carPay}, #{tenurePay}, #{dutyPay}, #{bonusPay},
+	#{holidayPay})
+
+</insert>
+
+<insert id="insertDeduction" parameterType="org.psyzon.domain.DeductionVO">
+<![CDATA[
+INSERT INTO DEDUCTION (
+	PAYROLL_NO, NATIONAL_PENSION, HEALTH_INSURANCE,
+	LONG_TERM_CARE_INSURANCE, EMPLOYMENT_INSURANCE,
+	INCOME_TAX, RESIDENT_TAX, ETC_DEDUCTION)
+VALUES (
+	#{payNo}, #{nationalPension}, #{healthInsurance},
+	#{longInsurance}, #{emplInsurance}, #{incomeTax},
+	#{residentTax}, #{etcDeduction, jdbcType=VARCHAR2})
+]]>
+</insert>
+
+
+<update id="updatePay" parameterType="org.psyzon.domain.PayrollVO">
+
+UPDATE PAYROLL
+SET	PAYROLL_DATE = #{payDay},
+			PAYROLL_ORDER = #{payOrder},
+			BASE_SALARY = #{basePay},
+			MEAL_ALLOWANCE = #{mealPay},
+			CHILD_ALLOWANCE = #{childPay},
+			JOB_ALLOWANCE = #{jobPay},
+			CAR_CARE_ALLOWANCE = #{carPay},
+			TENURE_ALLOWANCE = #{tenurePay},
+			DUTY_ALLOWANCE = #{dutyPay},
+			BONUS__ALLOWANCE = #{bonusPay},
+			HOLIDAY_ALLOWANCE = #{holidayPay}
+WHERE PAYROLL_NO = #{payNo}
+
+</update>
+
+<update id="updateDeduction" parameterType="org.psyzon.domain.DeductionVO">
+
+<![CDATA[
+UPDATE DEDUCTION
+SET	NATIONAL_PENSION = #{nationalPension},
+			HEALTH_INSURANCE = #{healthInsurance},
+			LONG_TERM_CARE_INSURANCE = #{longInsurance},
+			EMPLOYMENT_INSURANCE = #{emplInsurance},
+			INCOME_TAX = #{incomeTax},
+			RESIDENT_TAX = #{residentTax},
+			ETC_DEDUCTION = #{etcDeduction, jdbcType=VARCHAR2}
+WHERE PAYROLL_NO = #{payNo}
+]]>
+
+</update>
+
+<delete id="deletePay">
+
+DELETE PAYROLL
+WHERE PAYROLL_NO = #{payNo}
+
+</delete>
+
+
+</mapper>
+
+<typeHandlers>
+        <typeHandler handler="org.apache.ibatis.type.LocalDateTypeHandler" />
+</typeHandlers>
+
+</configuration>
