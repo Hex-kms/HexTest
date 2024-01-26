@@ -3,7 +3,7 @@ package org.psyzon.domain;
 import lombok.Data;
 
 @Data
-public class AddListForPayVO {
+public class MemForPayVO {
 	
 	private String m_number;
 	private String m_type;

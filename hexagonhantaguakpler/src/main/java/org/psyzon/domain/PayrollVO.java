@@ -9,6 +9,10 @@ public class PayrollVO {
 
 	private int payNo;
 	private String m_number;
+	private int imputedYear;
+	private int imputedMonth;
+	private LocalDate periodStart;
+	private LocalDate periodEnd;
 	private LocalDate payDay;
 	private int payOrder;
 	private int basePay;

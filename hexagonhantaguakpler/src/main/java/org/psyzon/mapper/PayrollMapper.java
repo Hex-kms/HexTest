@@ -1,6 +1,12 @@
 package org.psyzon.mapper;
 
+import java.util.List;
+
+import org.psyzon.domain.AddMemForPayVO;
 import org.psyzon.domain.DeductionVO;
+import org.psyzon.domain.LoadExPayVO;
+import org.psyzon.domain.MemForPayVO;
+import org.psyzon.domain.PaySearchVO;
 import org.psyzon.domain.PayrollVO;
 
 public interface PayrollMapper {
@@ -13,10 +19,19 @@ public interface PayrollMapper {
 	
 	public int updateDeduction(DeductionVO deduction);
 	
-	public int deletePay(String m_number);
+	public int deletePay(int payNo);
 	
-	public int selectPayByDateOrder();
+	public int deleteAllPay(List<Integer> payNoList);
 	
-	public int selectDudection();
+	public List<PayrollVO>selectPayByDateOrder(PaySearchVO paySearch);
+	
+	public List<DeductionVO> selectDeduction(List<Integer> payNoList);
+	
+	public List<AddMemForPayVO> addMemForPay(String m_class, String m_condition);
+	
+	public List<MemForPayVO> memForPay(List<String> m_numberList);
+	
+	public List<LoadExPayVO> loadExPay();
+	
 
 }
