@@ -32,6 +32,8 @@ destroy-method="close">
 <bean id="sqlSessionFactory"
 class="org.mybatis.spring.SqlSessionFactoryBean">
 <property name="dataSource" ref="dataSource"></property>
+<property name="typeHandlersPackage" value="org.psyzon.typehandlers" />
+<property name="mapperLocations" value="classpath:org/psyzon/mapper/*.xml"/>
 </bean>
 
 <bean id="transactionManager"

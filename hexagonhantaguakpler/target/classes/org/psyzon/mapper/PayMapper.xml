@@ -3,12 +3,11 @@
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<configuration>
-
-<mapper namespace="org.zerock.mapper.PayrollMapper">
+<mapper namespace="org.psyzon.mapper.PayrollMapper">
 
 <resultMap id="payrollResultMap" type="org.psyzon.domain.PayrollVO">
 <id  property="payNo" column="payroll_no"/>
+<result property = "m_number" column="m_number"/>
 <result property = "imputedYear" column="imputed_year"/>
 <result property = "imputedMonth" column="imputed_month"/>
 <result property = "periodStart" column = "period_start"/>
@@ -27,7 +26,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 </resultMap>
 
 <resultMap id="paySearchResultMap" type="org.psyzon.domain.PaySearchVO">
-<result property="payDay"	column="payroll_date"/>
+<result property="m_number" column="m_number"/>
+<result property="imputedYear"	column="imputed_year"/>
+<result property="imputedMonth" column="imputed_month"/>
 <result property="payOrder"	column="payroll_order"/>
 </resultMap>
 
@@ -43,7 +44,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 </resultMap>
 
 
-<select id= "selectPayByDateOrder"  parameterType="org.psyzon.domain.PaySearchVO" resultType="org.psyzon.domain.PayrollVO" resultMap="paysearchMap">
+<select id= "selectPayByDateOrder"  parameterType="org.psyzon.domain.PaySearchVO" resultType="org.psyzon.domain.PayrollVO" resultMap="payrollResultMap">
 
 <![CDATA[
 SELECT 
@@ -54,8 +55,8 @@ FROM PAYROLL
 WHERE (M_NUMBER = #{m_number} OR #{m_number} = 'ALL')
     AND IMPUTED_YEAR = #{imputedYear}
 	AND IMPUTED_MONTH = #{imputedMonth}
-    AND PAYROLL_ORDER = #{pay_order}
-ORDER BY M_NUMBER ASC;
+    AND PAYROLL_ORDER = #{payOrder}
+ORDER BY M_NUMBER ASC
 ]]>
 
 </select>
@@ -79,7 +80,7 @@ WHERE PAYROLL_NO IN
 SELECT M_TYPE, M_NUMBER, M_NAME, M_CLASS, M_POSITION, M_CONDITION
 FROM MEMBER_LIST
 WHERE (M_CLASS = #{m_class} OR #{m_class} = 'ALL')
-	AND (M_CONDITION = #{m_condition} OR #{m_condition} = 'ALL');
+	AND (M_CONDITION = #{m_condition} OR #{m_condition} = 'ALL')
 <!-- 검색조건이 문자열 'ALL'로 입력되었을 경우, 해당 조건은 항상 '참'으로 간주되어 모든 속성을 대상으로 한다. -->
 
 </select>
@@ -107,7 +108,7 @@ INSERT INTO PAYROLL (
 	TENURE_ALLOWANCE, DUTY_ALLOWANCE,
 	BONUS__ALLOWANCE, HOLIDAY_ALLOWANCE)
 VALUES (
-	#{m_number}, #{imputedYear}, #{imputedMonth}, #{periodStart], #{periodEnd},
+	#{m_number}, #{imputedYear}, #{imputedMonth}, #{periodStart}, #{periodEnd},
 	 #{payDay}, #{payOrder}, #{basePay}, #{mealPay}, #{childPay}, #{jobPay},
 	#{carPay}, #{tenurePay}, #{dutyPay}, #{bonusPay},
 	#{holidayPay})
@@ -123,7 +124,7 @@ INSERT INTO DEDUCTION (
 VALUES (
 	#{payNo}, #{nationalPension}, #{healthInsurance},
 	#{longInsurance}, #{emplInsurance}, #{incomeTax},
-	#{residentTax}, #{etcDeduction, jdbcType=VARCHAR2})
+	#{residentTax}, #{etcDeduction, jdbcType=VARCHAR})
 ]]>
 </insert>
 
@@ -156,7 +157,7 @@ SET	NATIONAL_PENSION = #{nationalPension},
 			EMPLOYMENT_INSURANCE = #{emplInsurance},
 			INCOME_TAX = #{incomeTax},
 			RESIDENT_TAX = #{residentTax},
-			ETC_DEDUCTION = #{etcDeduction, jdbcType=VARCHAR2}
+			ETC_DEDUCTION = #{etcDeduction, jdbcType=VARCHAR}
 WHERE PAYROLL_NO = #{payNo}
 ]]>
 
@@ -183,15 +184,9 @@ WHERE PAYROLL_NO IN
 
 SELECT DISTINCT IMPUTED_YEAR, IMPUTED_MONTH, PAYROLL_ORDER
 FORM PAYROLL
-ORDER BY IMPUTED_YEAR DESC, IMPUTED_MONTH DESC, PAYROLL_ORDER ASC;
+ORDER BY IMPUTED_YEAR DESC, IMPUTED_MONTH DESC, PAYROLL_ORDER ASC
 
 </select>
 
 
 </mapper>
-
-<typeHandlers>
-        <typeHandler handler="org.apache.ibatis.type.LocalDateTypeHandler" />
-</typeHandlers>
-
-</configuration>

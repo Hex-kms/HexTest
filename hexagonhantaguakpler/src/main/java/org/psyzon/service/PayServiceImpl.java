@@ -1,6 +1,7 @@
 package org.psyzon.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,10 @@ public class PayServiceImpl implements PayService {
 	public List<ReadyForPayrollVO> readyForPayroll(PaySearchVO paySearch) {
 		List<PayrollVO> payrollList = selectPayByDateOrder(paySearch);
 		
+		if(payrollList.isEmpty()) {
+			return Collections.emptyList();
+		}
+		
 		//연관 Deduction을 찾기 위해 payroll_no 추출
 		List<Integer> payNoList = payrollList.stream().map(PayrollVO::getPayNo).collect(Collectors.toList());
 		
@@ -146,20 +151,23 @@ public class PayServiceImpl implements PayService {
 	public List<Map<String, String>> parsedEtc(String etcDeduction) {
 		List<Map<String, String>> parsedList = new ArrayList<>();
 		
-		try {
-			JSONArray jsonArray = new JSONArray(etcDeduction);
-			for (int i = 0; i < jsonArray.length(); i++) {
-				JSONObject jsonObject = jsonArray.getJSONObject(i);
-				Map<String, String> map = new HashMap<>();
-				jsonObject.keys().forEachRemaining(key -> {
-					map.put(key, jsonObject.getString(key));
-				});
-				parsedList.add(map);
-			}
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return parsedList;
+	    try {
+	        // 등록된 행을 ','로 구분
+	        String[] rows = etcDeduction.split(",");
+	        
+	        for (String row : rows) {
+	            // 각 행의 JSON 객체 파싱
+	            JSONObject jsonObject = new JSONObject(row);
+	            Map<String, String> map = new HashMap<>();
+	            jsonObject.keys().forEachRemaining(key -> {
+	                map.put(key, jsonObject.getString(key));
+	            });
+	            parsedList.add(map);
+	        }
+	    } catch (JSONException e) {
+	        e.printStackTrace();
+	    }
+	    return parsedList;
 	}
 	/*위의 파싱을 위해 pom.xml에 추가해야하는 내용:
 	<dependency>
