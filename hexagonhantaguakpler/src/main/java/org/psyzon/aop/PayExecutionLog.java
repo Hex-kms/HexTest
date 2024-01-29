@@ -27,13 +27,14 @@ public class PayExecutionLog {
 	  @Before("execution(* org.psyzon.service.PayService*.*(..))")
 	  public void logBefore() {
 	  
-	  log.info("======================"); 
+	  log.info("=========METHOD============="); 
 	  }
 	  
 	  @Before("execution(* org.psyzon.service.PayService*.*(..))")
 	  public void logBeforeMethod(JoinPoint joinPoint) {
 		  log.info("Before method: " + joinPoint.getSignature().getName());
 	  }
+	  
 	  
 
 	@Before("execution(* org.psyzon.service.PayService*.insertPayroll(org.psyzon.domain.PayrollVO,org.psyzon.domain.DeductionVO)) && args(payroll, deduction)")
@@ -47,21 +48,21 @@ public class PayExecutionLog {
 	    log.info("PayNoList values before calling selectDeduction: " + payNoList);
 	}
 	
-    @AfterReturning(pointcut = "execution(* org.psyzon.service.PayService.selectPayByDateOrder(..))", returning = "result")
-    public void logAfterSelectPayByDateOrder(JoinPoint joinPoint, Object result) {
-        log.info("selectPayByDateOrder executed. Result: " + result);
-    }
 	
 	
-	@Around("execution(* org.psyzon.service.PayService*.*(..))")
+	@Around("execution(* org.psyzon.service.PayService*.*(..)) || execution(* org.psyzon.mapper..*.*(..))")
 	public Object logTime( ProceedingJoinPoint pjp) throws Throwable {
 		long start = System.currentTimeMillis();
 				
-				log.info("Target: " + pjp.getTarget());
+				String className = pjp.getSignature().getDeclaringTypeName();
+				String methodName = pjp.getSignature().getName();
+				log.info("Target: " + className + "." + methodName);
 				log.info("Param: " + Arrays.deepToString(pjp.getArgs()));
 				
 				//invoke method
 				Object result = pjp.proceed();
+				
+				log.info("Result: " + result);
 
 				
 				long end = System.currentTimeMillis();

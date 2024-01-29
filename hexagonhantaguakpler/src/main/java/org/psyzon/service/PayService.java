@@ -1,5 +1,6 @@
 package org.psyzon.service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -27,14 +28,20 @@ public interface PayService {
 	
 	public List<DeductionVO> selectDeduction(List<Integer> payNoList);
 	
-	public List<ReadyForPayrollVO> readyForPayroll(PaySearchVO paySearch);
+	public List<ReadyForPayrollVO> readyForPayroll(PaySearchVO paySearch) throws IOException;
 	
 	public List<AddMemForPayVO> addMemForPayList(String m_class, String m_condition);
 	
 	public List<MemForPayVO> memForPay(List<String> m_nuberList);
 	
-	public List<Map<String, String>> parsedEtc(String etcDeduction);
+	public List<Map<String, String>> parsedEtc(String etcDeduction) throws IOException;
 	
 	public List<LoadExPayVO> loadExPay();
+	
+	public List<String> extractEtcKeys(List<DeductionVO> deductionList);
+	
+	public int sumTotalPay(PayrollVO payroll);
+	
+	public int sumTotalDeduction(DeductionVO deduction) throws NumberFormatException;
 	
 }

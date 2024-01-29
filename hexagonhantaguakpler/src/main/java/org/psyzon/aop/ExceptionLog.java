@@ -23,10 +23,17 @@ public void logServiceException(Exception exception) {
 		
 	}
 	
+	/*
+	 * @AfterThrowing(pointcut =
+	 * "execution(*org.psyzon.mapper.PayrollMapper.*(..))", throwing="exception")
+	 * public void logMapperException(Exception exception) { logException("Mapper",
+	 * exception); }
+	 */
+	
 	private void logException(String layer, Exception exception) {
 		log.error("♨♨♨♨♨♨♨♨♨♨♨♨♨♨♨♨♨♨♨♨♨");
 		log.error("........Exception in " + layer + " Layer........!!!!!!");
-		log.error("exception: " + exception);
+		log.error("Exception: " + exception);
 	}
 
 }

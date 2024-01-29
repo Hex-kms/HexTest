@@ -1,15 +1,14 @@
 package org.psyzon.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.psyzon.domain.AddMemForPayVO;
 import org.psyzon.domain.DeductionVO;
 import org.psyzon.domain.LoadExPayVO;
@@ -21,6 +20,9 @@ import org.psyzon.mapper.PayrollMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.Setter;
 
@@ -73,7 +75,7 @@ public class PayServiceImpl implements PayService {
 	/*급여입력관리 페이지 접속시 귀속연월과 급여차수에 따른 급여내역을 select 하고,
 	 * 해당 급여와 연관된 사원정보와 공제내역까지 가져온다 */
 	@Override
-	public List<ReadyForPayrollVO> readyForPayroll(PaySearchVO paySearch) {
+	public List<ReadyForPayrollVO> readyForPayroll(PaySearchVO paySearch) throws IOException {
 		List<PayrollVO> payrollList = selectPayByDateOrder(paySearch);
 		
 		if(payrollList.isEmpty()) {
@@ -93,10 +95,10 @@ public class PayServiceImpl implements PayService {
 				deduction.setParsedEtc(new ArrayList<>());
 			}
 		}
+	
 
-		//연관 사원정보를 찾기 위해 사원번호 추출
+		//사원번호를 추출하여 연관된 사원정보 검색
 		List<String> m_numberList = payrollList.stream().map(PayrollVO::getM_number).collect(Collectors.toList());
-		
 		List<MemForPayVO> memberList = memForPay(m_numberList);
 		
 		List<ReadyForPayrollVO> readyForPayList = new ArrayList<>();
@@ -111,6 +113,13 @@ public class PayServiceImpl implements PayService {
 			
 			MemForPayVO member = memberList.stream().filter(m -> m.getM_number().equals(payroll.getM_number())).findFirst().orElse(null);
 			readyForPay.setMember(member);
+			
+			int totalPay = sumTotalPay(payroll);
+			int totalDeduction = sumTotalDeduction(deduction);
+			int actualPay = totalPay - totalDeduction;
+			readyForPay.setTotalPay(totalPay);
+			readyForPay.setTotalDeduction(totalDeduction);
+			readyForPay.setActualPay(actualPay);
 			
 			readyForPayList.add(readyForPay);
 			
@@ -145,28 +154,21 @@ public class PayServiceImpl implements PayService {
 	}
 
 	
+	private final ObjectMapper objectMapper = new ObjectMapper();
 	/*Deduction 테이블의 ETC_DEDUCTION 열을 JSON 형식으로 다루기 위한 메서드로,
 	ETC_DEDUCTION의 데이터를 Map<이름, 값>형태로 파싱하여 배열에 담는다*/
 	@Override
-	public List<Map<String, String>> parsedEtc(String etcDeduction) {
+	public List<Map<String, String>> parsedEtc(String etcDeduction) throws IOException {
 		List<Map<String, String>> parsedList = new ArrayList<>();
 		
-	    try {
-	        // 등록된 행을 ','로 구분
-	        String[] rows = etcDeduction.split(",");
-	        
-	        for (String row : rows) {
-	            // 각 행의 JSON 객체 파싱
-	            JSONObject jsonObject = new JSONObject(row);
-	            Map<String, String> map = new HashMap<>();
-	            jsonObject.keys().forEachRemaining(key -> {
-	                map.put(key, jsonObject.getString(key));
-	            });
-	            parsedList.add(map);
-	        }
-	    } catch (JSONException e) {
-	        e.printStackTrace();
-	    }
+		String [] rows = etcDeduction.split(",");
+		
+		for(String row : rows) {
+			Map<String, String> map = objectMapper.readValue(row, new TypeReference<Map<String, String>>(){});
+			parsedList.add(map);
+		}
+		
+	    
 	    return parsedList;
 	}
 	/*위의 파싱을 위해 pom.xml에 추가해야하는 내용:
@@ -182,6 +184,68 @@ public class PayServiceImpl implements PayService {
 		return mapper.loadExPay();
 	}
 	//String.format("%02d", loadExPay.getImputedMonth()) + "월 ") 이런식으로 01월 같은 문자열 형태로 표현가능
+	
+	
+
+	//기타공제항목의 키값들을 추출하는 메서드
+	@Override
+	public List<String> extractEtcKeys(List<DeductionVO> deductionList) {
+		Set<String> uniqueKeys = new HashSet<>();
+		for (DeductionVO deduction : deductionList) {
+			if (deduction.getParsedEtc() != null) {
+				for (Map<String, String> etcMap : deduction.getParsedEtc()) {
+					uniqueKeys.addAll(etcMap.keySet());
+				}
+			}
+		}
+		return new ArrayList<>(uniqueKeys);
+	}
+
+	@Override
+	public int sumTotalPay(PayrollVO payroll) {
+		int totalPay = 0;
+		
+		totalPay += payroll.getBasePay();
+		totalPay += payroll.getMealPay();
+		totalPay += payroll.getChildPay();
+		totalPay += payroll.getJobPay();
+		totalPay += payroll.getCarPay();
+		totalPay += payroll.getTenurePay();
+		totalPay += payroll.getDutyPay();
+		totalPay += payroll.getBonusPay();
+		totalPay += payroll.getHolidayPay();
+		return totalPay;
+	}
+
+	@Override
+	public int sumTotalDeduction(DeductionVO deduction) throws NumberFormatException {
+		
+		int totalDeduction = 0;
+		totalDeduction += deduction.getNationalPension();
+		totalDeduction += deduction.getHealthInsurance();
+		totalDeduction += deduction.getLongInsurance();
+		totalDeduction += deduction.getEmpInsurance();
+		totalDeduction += deduction.getIncomeTax();
+		totalDeduction += deduction.getResidentTax();
+		
+	    // parsedEtc의 값들을 숫자로 변환하여 합산
+	    if (deduction.getParsedEtc() != null) {
+	        for (Map<String, String> etc : deduction.getParsedEtc()) {
+	            for (String value : etc.values()) {
+	             
+	                    totalDeduction += Integer.parseInt(value);
+	               
+	            }
+	        }
+	    }
+	    
+		return totalDeduction;
+		
+	}
+	
+	
+	
+	
 	
 
 }

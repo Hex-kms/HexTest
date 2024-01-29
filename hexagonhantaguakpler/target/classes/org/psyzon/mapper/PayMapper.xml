@@ -48,7 +48,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
 <![CDATA[
 SELECT 
-    PAYROLL_NO, PAYROLL_DATE, PAYROLL_ORDER, BASE_SALARY, MEAL_ALLOWANCE, 
+    PAYROLL_NO, M_NUMBER, IMPUTED_YEAR, IMPUTED_MONTH, PERIOD_START, PERIOD_END,
+    PAYROLL_DATE, PAYROLL_ORDER, BASE_SALARY, MEAL_ALLOWANCE, 
     CHILD_ALLOWANCE, JOB_ALLOWANCE, CAR_CARE_ALLOWANCE, TENURE_ALLOWANCE, 
     DUTY_ALLOWANCE, BONUS_ALLOWANCE, HOLIDAY_ALLOWANCE
 FROM PAYROLL
@@ -64,7 +65,7 @@ ORDER BY M_NUMBER ASC
 <select id="selectDeduction"  resultType="org.psyzon.domain.DeductionVO" resultMap="deductionResultMap">
 
 SELECT
-	NATIONAL_PENSION, HEALTH_INSURANCE,
+	PAYROLL_NO, NATIONAL_PENSION, HEALTH_INSURANCE,
 	LONG_TERM_CARE_INSURANCE, EMPLOYMENT_INSURANCE,
 	INCOME_TAX, RESIDENT_TAX, ETC_DEDUCTION
 FROM DEDUCTION
@@ -85,12 +86,12 @@ WHERE (M_CLASS = #{m_class} OR #{m_class} = 'ALL')
 
 </select>
 
-<select id="MemForPay" resultType="org.psyzon.domain.MemForPayVO">
+<select id="memForPay" resultType="org.psyzon.domain.MemForPayVO">
     SELECT M_NUMBER, M_TYPE, M_NAME, M_CLASS
     FROM MEMBER_LIST
     WHERE M_NUMBER IN
     <foreach item="m_number" collection="list" open="(" separator="," close=")">
-        #{m_number}
+        #{m_number, jdbcType=VARCHAR}
     </foreach>
 </select>
 
